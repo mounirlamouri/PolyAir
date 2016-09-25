@@ -32,9 +32,11 @@ body {
   }
 }
 
-topeka-app {
-  min-height: 450px;
-  overflow: hidden;
+body .toolbar-tools,
+body /deep/ .toolbar-tools {
+  padding: none;
+  background-color: #01579b;
+  color: #fff;
 }
 
 paper-fab {
@@ -54,7 +56,7 @@ paper-button[raised].colored {
 }
 
 core-scaffold::shadow core-header-panel::shadow #mainPanel {
-  padding: 20px;
+  margin: 20px;
 }
 
 paper-checkbox {
@@ -69,3 +71,4 @@ paper-checkbox {
 paper-button.checkin {
   margin-top: 20px;
 }
+

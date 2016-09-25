@@ -52,6 +52,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
   <link rel="import" href="components/paper-checkbox/paper-checkbox.html">
   <link rel="import" href="components/paper-fab/paper-fab.html">
   <link rel="import" href="components/paper-input/paper-input.html">
+  <link rel="import" href="components/paper-icon-button/paper-icon-button.html">
   <link rel="import" href="components/paper-item/paper-item.html">
   <link rel="import" href="components/paper-toast/paper-toast.html">
   <link rel="import" href="flight-panel.html">
@@ -61,16 +62,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       "use strict";
         var log = console.log.bind(console);
         var err = console.error.bind(console);
-
-        /*
-        setTimeout(function() {
-          localforage.getItem('track').then(function(item) {
-            console.log('track item ' + item);
-            if (item != null)
-              showTrackMenu();
-          });
-        }, 1000);
-        */
 
         if ('serviceWorker' in navigator) {
           navigator.serviceWorker.register("flight-info-sw.js").then(function(sw) {
@@ -83,6 +74,23 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           }, 1000);
         }
     }());
+
+    // Hack coming from John Mellor to work around a layout issue when opening
+    // a page after receiving a message when Chrome was dead.
+    function crazyHack() {
+      if (window.outerHeight == 0) {
+        setTimeout(crazyHack, 32);
+        return;
+      }
+      // CRAZY HACK: When opening Chrome after receiving a push message in
+      // the background, the top controls manager can get confused,
+      // causing the omnibox to permanently overlap the top 56 pixels of
+      // the page. Detect this and work around it with a spacer div.
+      if (screen.height - window.outerHeight == 25) {
+        document.querySelector('core-scaffold::shadow core-drawer-panel').style.top = '56px';
+      }
+    }
+    setTimeout(crazyHack, 500);
 
     // There is a bug with the History API and SW...
     var ENABLE_HISTORY_API = false;
@@ -136,16 +144,14 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         case 'checkin-confirmation':
           selected = 2;
           break;
-        case 'track':
+        case 'boarding':
           selected = 3;
+          break;
+        case 'track':
+          selected = 4;
           break;
       }
       document.querySelector('core-pages').selected = selected;
-    }
-
-    var showTrackMenu = function() {
-      var trackMenu = document.getElementById('track-menu');
-      trackMenu.hidden = trackMenu.previousElementSibling.hidden = false;
     }
 
     var sendRegistration = function(registration) {
@@ -200,7 +206,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
               'gate': '-',
             }
           });
-          showTrackMenu();
+
+          updateState('boarding');
        }, function(e) {
           document.querySelector('#push-error').show();
           console.log('Push registration failed: ' + e);
@@ -214,6 +221,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 </head>
 <body>
 
+  <div id="workaround-header"></div>
   <template id='content' is="auto-binding">
     <core-scaffold id="scaffold">
       <core-header-panel navigation flex mode="seamed" onclick="this.parentElement.togglePanel();">
@@ -232,11 +240,17 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           <paper-item icon="help" label="Help & Feedback"></paper-item>
         </core-menu>
       </core-header-panel>
-      <core-toolbar tool>PolyAir</core-toolbar>
+      <core-toolbar tool flex id="main-heading">
+        <paper-icon-button icon="maps:flight"></paper-icon-button>
+        <span flex>PolyAir</span>
+        <paper-icon-button id="searchbutton" icon="search"></paper-icon-button>
+      </core-toolbar>
+
       <core-pages selected='0'>
         <section>
-          <div>Welcome to PolyAir!<br>
-            Getting you from here to there, with flair.
+          <div>
+            <span style="font-weight: bold;">Welcome to PolyAir!</span>
+            <span>Getting you from here to there, with flair.</span>
           </div>
           <paper-fab icon='add' class='red'></paper-fab>
         </section>
@@ -284,6 +298,14 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             <core-icon icon="clear "></core-icon>
             cancel
           </paper-button>
+        </section>
+        <section> <!-- boarding pass -->
+          <div style="text-align: center;">
+          <div style="font-weight: bold; padding-bottom: 5px; padding-left: 15px;">
+            You are ready to go!
+          </div>
+          <img src='boarding.png' flex></img>
+          </div>
         </section>
         <section> <!-- track -->
           <div id=track-content></div>
